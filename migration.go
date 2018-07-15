@@ -4,32 +4,33 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
-const usage string = "Usage: migration [COMMAND] [OPTION...]\n\n" +
+const usage = "Usage: migration [COMMAND] [OPTION...]\n\n" +
 	"  init                  initialize database\n" +
 	"  up                    upgrade database\n" +
 	"  down                  downgrade database\n" +
 	"  status                display migration status\n" +
 	"  help | -h | --help    display this help and exit"
 
-const migrationTable string = "CREATE TABLE IF NOT EXISTS `_migration` (" +
+const migrationTable = "CREATE TABLE IF NOT EXISTS `_migration` (" +
 	"`grade` int NOT NULL," +
 	"`name` varchar(32) NOT NULL," +
 	"`modified_at` bigint(20) NOT NULL" +
 	") ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;"
 
 var (
-	mysql_username string
-	mysql_password string
-	mysql_db_name  string
+	MysqlUsername string
+	MysqlPassword string
+	MysqlDbName   string
 )
 
 type Generation struct {
@@ -128,9 +129,9 @@ func NewNonInitializedAppDB(dir string, db *sql.DB) (*AppDB, error) {
 	return &AppDB{
 		Generations: generations,
 		Current:     generationZero,
-		UserName:    mysql_username,
-		Password:    mysql_password,
-		Name:        mysql_db_name,
+		UserName:    MysqlUsername,
+		Password:    MysqlPassword,
+		Name:        MysqlDbName,
 		db:          db,
 	}, nil
 }
@@ -147,9 +148,9 @@ func NewAppDB(dir string, db *sql.DB) (*AppDB, error) {
 	return &AppDB{
 		Generations: generations,
 		Current:     current,
-		UserName:    mysql_username,
-		Password:    mysql_password,
-		Name:        mysql_db_name,
+		UserName:    MysqlUsername,
+		Password:    MysqlPassword,
+		Name:        MysqlDbName,
 		db:          db,
 	}, nil
 }
@@ -251,20 +252,20 @@ func (app *AppDB) Status() {
 }
 
 func initEnv() error {
-	mysql_username = os.Getenv("MYSQL_USERNAME")
-	mysql_password = os.Getenv("MYSQL_PASSWORD")
-	mysql_db_name = os.Getenv("MYSQL_DB_NAME")
+	MysqlUsername = os.Getenv("MYSQL_USERNAME")
+	MysqlPassword = os.Getenv("MYSQL_PASSWORD")
+	MysqlDbName = os.Getenv("MYSQL_DB_NAME")
 	switch {
-	case mysql_username == "":
+	case MysqlUsername == "":
 		return errors.New("Environment variable `MYSQL_USERNAME` not found.")
-	case mysql_db_name == "":
+	case MysqlDbName == "":
 		return errors.New("Environment variable `MYSQL_DB_NAME` not found.")
 	}
 	return nil
 }
 
 func getDbConn() (*sql.DB, error) {
-	connectText := fmt.Sprintf("%s:%s@/%s", mysql_username, mysql_password, mysql_db_name)
+	connectText := fmt.Sprintf("%s:%s@/%s", MysqlUsername, MysqlPassword, MysqlDbName)
 	return sql.Open("mysql", connectText)
 }
 
